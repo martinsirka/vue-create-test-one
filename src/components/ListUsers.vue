@@ -1,17 +1,32 @@
 <template>
   <div>
-    <Pagination>
-      <ul class="container">
-        <li class="item" v-for="(item, index) in data" :key="index">
-          <div class="item-wrapper">
-            <img class="list-item_img" :src="item.owner.avatar_url" :alt="item.owner.type"/>
-            <div class="list-item_file">
-              <p v-for="(file, index) in item.files" :key="index">{{ file.filename }}</p>
-            </div>
+    <ul v-if="!loading" class="container">
+      <li class="item" v-for="(item, index) in data" :key="index">
+        <div class="item-wrapper" @click="indicateState(item.id)">
+          <div class="list-item_img">
+            <img ref="userImage" class="image" :src="item.owner.avatar_url" alt="avatar_img"/>
+            <div class="overlay" v-if="activeEl == item.id"></div>
           </div>
-        </li>
-      </ul>
-    </Pagination>
+          <div class="list-item_file" :class="{ 'active_txt' : activeEl == item.id }">
+            <p v-for="(file, index) in item.files" :key="index">{{ file.filename }}</p>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <div v-if="loading" class="loader">
+      <div class="loader_msg">
+        Loading...
+      </div>
+    </div>
+
+    <transition name="fade">
+      <div v-if="animateImage" class="modal">
+        <img ref="userImage" class="modal_image" :src="animateImage.owner.avatar_url" alt="avatar_img"/>
+      </div>
+    </transition>
+
+    <Pagination @setPageNumber="setPageNumber" :totalItems="62" :pageNumber="pageNumber"></Pagination>
   </div>
 </template>
 
@@ -29,60 +44,70 @@ export default {
 
   data() {
     return {
+      pageNumber: 1,
       data: null,
+			dateFormat: null,
+			loading: false,
+      activeEl: null,
+      animateImage: null,
     }
   },
 
-  async beforeCreate() {
+  mounted() {
+		this.fetchData();
+		this.getDate();
+	},
 
-    let d = new Date();
-    d.setDate(d.getDate()-3)
-    let dateFormat = d.toISOString().split('.')[0]+"Z"
+	watch: {
+		pageNumber() {
+			this.fetchData();
+		}
+	},
 
-    const params = {
-      since: dateFormat,
-      per_page: 30,
-      page: 1
+  methods: {
+    getDate() {
+			let d = new Date();
+			d.setDate(d.getDate() - 1)
+			this.dateFormat = d.toISOString().split('.')[0]+"Z"
+		},
+
+    setPageNumber(value) {
+      isNaN(value) == false ? this.pageNumber = value + 1 : ''
+      value == 'next' ? this.pageNumber = this.pageNumber + 1 : ''
+      value == 'previous' ? this.pageNumber = this.pageNumber - 1 : ''
+    },
+    
+    async fetchData() {
+      this.loading = true
+
+			const params = {
+				since: this.dateFormat
+			}
+
+			let results = await axios.get(`/gists/public?&page=${this.pageNumber}`, {params}); 
+
+			this.data = results.data
+			this.loading = false
+    },
+
+    indicateState(itemId) {
+      this.activeEl = itemId
+
+      this.data.map(item => {
+        item.id == itemId ? this.animateImage = item : ''
+      })
+
+      setTimeout(() => this.animateImage = null, 1000);
     }
-
-    let data = await axios.get(`/gists/public`, {params}); 
-
-    this.data = data.data
-
-    console.log('DATA', this.data)
-  },
-
+  }
 }
 </script>
 
 <style scoped lang="scss">
-.list{
-  margin-top: 6rem;
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s;
 }
-
-.item {
-  list-style: none;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
-}
-
-.item-wrapper {
-  display: flex;
-  padding: 1rem 0;
-
-    p {
-      display: flex;
-      align-items: center;
-      margin: 0 0 0 1.5rem;
-  }
-}
-
-.list-item_img {
-  width: 6rem;
-}
-
-.list-item_file {
-  display: flex;
-  flex-wrap: wrap;
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 </style>

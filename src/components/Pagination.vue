@@ -1,28 +1,47 @@
 <template>
-    <div>
-        <slot />
-        <div class="pagination-row">
-            <span v-for="(item, index) in new Array(10)" :key="index">
-                <button class="pagination-button">{{ index + 1 }}</button>
-            </span>
-            <button class="pagination-button"> &lt; </button> 
-            <button class="pagination-button"> &gt; </button>
-        </div>
-    </div>
+	<div>
+		<div class="pagination-row">
+			<span v-for="(item, index) in new Array(numberPages)" :key="index">
+				<p @click="setPageNumber(index)" class="pagination-button">{{ index + 1 }}</p>
+			</span>
+			<button @click="setPageNumber('previous')" class="prev_next-button"> ˂ </button> 
+			<button @click="setPageNumber('next')" class="prev_next-button"> > </button>
+		</div>
+	</div>
 </template>
 
-<style scoped lang="scss">
-    .pagination-row {
-        display: flex;
-        justify-content: end;
-        padding: 1.5rem;
-    }
+<script>
 
-    .pagination-button {
-        padding: 8px;
-        margin: 2px;
-        border-radius: 3px;
-        font-size: 1em;
-        cursor: pointer;
-    }
+export default {
+  name: 'Pagination',
+
+	props: {
+		totalItems: {
+			type: Number,
+			required: true,
+		}
+	},
+
+	data() {
+		return {
+			perPage: 30,
+		}
+	},
+
+	computed: {
+		numberPages() {
+			return Math.ceil(this.totalItems / this.perPage);
+		}
+	},
+
+	methods: {
+		setPageNumber(value) {
+			this.$emit('setPageNumber', value)
+		}
+	}
+}
+</script>
+
+<style scoped lang="scss">
+    
 </style>
