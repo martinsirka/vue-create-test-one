@@ -36,12 +36,6 @@ export default {
 		}
 	},
 
-	// watch: {
-	// 	isActive() {
-	// 		console.log(this.isActive)
-	// 	}
-	// },
-
 	methods: {
 		setPageNumber(index) {
 			this.isActive = index
@@ -57,7 +51,3 @@ export default {
 	}
 }
 </script>
-
-<style scoped lang="scss">
-    
-</style>
