@@ -1,5 +1,5 @@
 <template>
-    <div class="header">
-        Gists
-    </div>
+	<div class="header">
+		Gists
+	</div>
 </template>
