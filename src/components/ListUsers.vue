@@ -1,8 +1,8 @@
 <template>
   <div>
-    <ul v-if="!loading" class="container">
+    <ul v-show="!loading" class="container">
       <li class="item" v-for="(item, index) in data" :key="index">
-        <div class="item-wrapper" @click="indicateState(item.id)">
+        <div class="item-wrapper" @click="fadeUsersImage(item.id)">
           <div class="list-item_img">
             <img ref="userImage" class="image" :src="item.owner.avatar_url" alt="avatar_img"/>
             <div class="overlay" v-if="activeEl == item.id"></div>
@@ -16,13 +16,13 @@
 
     <transition name="fade">
       <div v-if="animateImage" class="modal">
-        <img ref="userImage" class="modal_image" :src="animateImage.owner.avatar_url" alt="avatar_img"/>
+        <img class="modal_image" :src="animateImage.owner.avatar_url" alt="avatar_img"/>
       </div>
     </transition>
 
     <Loader v-show="loading" />
 
-    <Pagination @setPageNumber="setPageNumber" :pages="pages" />
+    <Pagination @setPageNumber="setPageNumber" :pages="pages" :pageNumber="pageNumber" />
   </div>
 </template>
 
@@ -48,26 +48,29 @@ export default {
       activeEl: null,
       animateImage: null,
       dateFormat: null,
-      pages: 10,
+      pages: 3,
     }
   },
 
   mounted() {
 		this.fetchData();
 		this.getDate();
-    window.addEventListener('scroll', this.infiniteScroll);
+
+    if (window.innerWidth < 1024 ) {
+      window.addEventListener('scroll', this.infiniteScroll)
+    }
 	},
 
   destroyed() {
     window.removeEventListener('scroll', this.infiniteScroll);
   },
 
-	// watch: {
-  //   // On change page number call fetchData method.
-	// 	pageNumber() {
-	// 		this.fetchData();
-	// 	}
-	// },
+	watch: {
+    // On change page number call fetchData method.
+		pageNumber() {
+			this.fetchData();
+		},
+	},
 
   methods: {
     getDate() {
@@ -80,27 +83,30 @@ export default {
       isNaN(value) == false ? this.pageNumber = value + 1 : ''
       value == 'next' && (this.pageNumber < this.pages - 1) ? this.pageNumber = this.pageNumber + 1 : ''
       value == 'prev' && (this.pageNumber > 1)  ? this.pageNumber = this.pageNumber - 1 : ''
-
-      this.fetchData();
     },
     
     async fetchData() {  
-      this.loading = false
       
-			const params = {
+      const params = {
         since: this.dateFormat,
-        page: this.pages,
 			}
 
+      this.loading = true
+			await axios.get(`/gists/public?&page=${this.pageNumber}`, {params})
+        .then(response => {
+          this.data = response.data
+        })
+        .catch(error => {
+          console.log(error)
+        })
+        .finally(() => {
+          this.$router.replace({ query: {page: this.pageNumber} })
+          this.loading = false
+        }); 
 
-			let results = await axios.get(`/gists/public?&page=${this.pageNumber}`, {params}); 
-			this.data = results.data
-
-      // this.$router.replace({ query: {page: this.pageNumber} })
-			this.loading = false
     },
 
-    indicateState(itemId) {
+    fadeUsersImage(itemId) {
       this.activeEl = itemId
       this.data.map(item => {
         item.id == itemId ? this.animateImage = item : ''
@@ -108,10 +114,8 @@ export default {
       setTimeout(() => this.animateImage = null, 1000);
     },
 
-    infiniteScroll() {
-
-      if ( window.innerWidth > 1024 ) return
-
+    async infiniteScroll() {
+      
       let bottomOfPage = (window.innerHeight + window.scrollY) >= document.body.offsetHeight
 
       const params = {
@@ -119,21 +123,16 @@ export default {
         page: this.pages,
 			}
    
-      if(bottomOfPage) {
-        
-        this.loading = true
-        
-        axios.get(`/gists/public?&page=${this.pageNumber}`, {params})
+      if(bottomOfPage) {  
+        await axios.get(`/gists/public?&page=${this.pageNumber}`, {params})
           .then(response => {
             response.data.map( item => {
               this.data.push(item)
             })
-
-            console.log(this.data)
           })
-          .finally(
-            this.loading = false
-          );
+          .catch(error => {
+            console.log(error)
+          })
       }
     } 
   }

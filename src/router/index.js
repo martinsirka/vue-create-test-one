@@ -15,10 +15,7 @@ const routes = [
 const router = new VueRouter({
   routes,
   scrollBehavior() {
-    return {
-      top: 0,
-      // behavior: 'smooth',
-    }
+    return { top: 0 }
   },
 })
 

@@ -6,7 +6,7 @@ import axios from "axios";
 
 axios.defaults.baseURL = "https://api.github.com";
 
-axios.defaults.headers.common["Authorization"] = "token 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";
+axios.defaults.headers.common["Authorization"] = "token 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"; 
 
 Vue.config.productionTip = false
 
